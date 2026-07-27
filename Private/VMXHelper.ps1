@@ -130,8 +130,13 @@ ethernet0.virtualDev = "e1000e"
 ethernet0.addressType = "generated"
 ethernet0.startConnected = "TRUE"
 
-# Boot: boot from CD-ROM first on the initial run
-bios.bootOrder = "cdrom,hdd"
+# Boot: hard disk FIRST. The install media is a no-prompt ISO, so if the
+# CD came first, every reboot during Windows Setup would restart the
+# installation from scratch (an endless install loop). With hdd first,
+# EFI cannot boot the blank disk and falls through to the CD on the first
+# boot only; as soon as Setup writes the Windows Boot Manager to the disk,
+# the disk wins and the installation continues normally.
+bios.bootOrder = "hdd,cdrom"
 bios.bootDelay = "2000"
 
 # Peripherals
