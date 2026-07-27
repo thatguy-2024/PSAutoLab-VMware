@@ -49,8 +49,11 @@ function New-LabVMX {
     $vmdkName = "$($Node.VMName).vmdk"
     $guestOS = ConvertTo-VMwareGuestOS -MediaId $Node.Media
 
-    # Custom vmnet host-only network for the lab (LabNet equivalent)
-    $vmnet = $Node.VMnet
+    # Custom vmnet host-only network for the lab (LabNet equivalent).
+    # Windows hosts name networks "VMnet<N>" (capital VM) - normalize the casing,
+    # a lowercase "vmnet2" in ethernet0.vnet fails to resolve and the VM cannot
+    # power on (vmrun reports only "Unknown error").
+    $vmnet = $Node.VMnet -replace '^(?i)vmnet', 'VMnet'
 
     $vmx = @"
 .encoding = "windows-1252"

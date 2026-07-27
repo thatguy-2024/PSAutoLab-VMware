@@ -60,7 +60,7 @@ $vmxContent = Get-Content $vmx -Raw
 Assert ($vmxContent -match 'firmware = "efi"') 'VMX uses EFI firmware'
 Assert ($vmxContent -match 'uefi\.secureBoot\.enabled = "FALSE"') 'VMX disables Secure Boot'
 Assert ($vmxContent -match 'virtualHW\.version = "21"') 'VMX hardware version 21'
-Assert ($vmxContent -match 'ethernet0\.vnet = "vmnet2"') 'VMX NIC on vmnet2'
+Assert ($vmxContent -match 'ethernet0\.vnet = "VMnet2"') 'VMX NIC on vmnet2'
 Assert ($vmxContent -match 'guestOS = "windows2019srv-64"') "VMX guestOS mapped (2019 Core)"
 Assert ($vmxContent -match [regex]::Escape('bios.bootOrder = "cdrom,hdd"')) 'VMX initial boot order cdrom,hdd'
 

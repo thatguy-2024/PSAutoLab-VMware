@@ -125,6 +125,21 @@ function Invoke-VMRun {
 
     if ($exitCode -ne 0) {
         $msg = "vmrun $Command failed (exit code $exitCode): $($output -join '; ')"
+        if (($Command -eq 'start') -and ($output -match 'Unknown error')) {
+            $msg += @"
+
+'Unknown error' from vmrun start usually means one of:
+ 1. Elevation mismatch - the VMware Workstation GUI is running non-elevated
+    while this PowerShell session is elevated (or vice versa). Close ALL
+    VMware Workstation windows and retry, or open Workstation 'as
+    Administrator' to match this console.
+ 2. An invalid setting in the generated .vmx (e.g. the lab network name).
+    Open the .vmx in VMware Workstation (File > Open) and power it on there
+    once - the GUI shows the real error message.
+ 3. The lab network is missing. Open Edit > Virtual Network Editor and
+    verify VMnet2 exists (host-only, 192.168.3.0/255.255.255.0, DHCP off).
+"@
+        }
         if ($IgnoreErrors) {
             Write-Verbose $msg
             return $null
