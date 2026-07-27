@@ -103,6 +103,10 @@ function Invoke-SetupLab {
         # install ISO (download once per media)
         $installIso = Get-LabISO -Id $node.Media
 
+        # rebuild without the UEFI 'Press any key to boot from CD or DVD'
+        # prompt (once per media) so the install is fully hands-free
+        $installIso = ConvertTo-LabNoPromptISO -Path $installIso
+
         # unattend ISO
         Write-Verbose "Creating autounattend ISO for $($node.Computername)"
         $unattendIso = New-LabUnattendISO -Node $node -Password $lab.Password

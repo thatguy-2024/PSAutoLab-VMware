@@ -144,6 +144,8 @@ If the automated vmnet configuration fails (vnetlib quirks vary between Workstat
 
 Evaluation media run for 180 days (servers) / 90 days (clients) — plenty for lab work.
 
+`Setup-Lab` also rebuilds each install ISO once into a `*_noprompt.iso` (using `efisys_noprompt.bin` from the ISO itself). This removes the UEFI **"Press any key to boot from CD or DVD"** prompt so the unattended install starts hands-free. The rebuild takes a few minutes and needs roughly the size of the ISO in extra disk space; the VMs are attached to the `_noprompt` copy. If the rebuild fails, the original ISO is used and you must click into the VM console and press a key at the boot prompt right after `Run-Lab`.
+
 ## Folder layout
 
 ```
