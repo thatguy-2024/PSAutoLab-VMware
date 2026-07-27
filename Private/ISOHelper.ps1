@@ -46,7 +46,9 @@ function New-LabUnattendISO {
         New-LabBootstrapScript -Node $Node | Set-Content -Path (Join-Path $staging 'Bootstrap.ps1') -Encoding UTF8
 
         if ($PSCmdlet.ShouldProcess($isoPath, 'Create unattend ISO')) {
-            New-ISOFile -SourcePath $staging -DestinationPath $isoPath -VolumeName 'UNATTEND'
+            # New-ISOFile also emits the destination path; suppress it so this
+            # function returns exactly one string (the ISO path) at the end.
+            [void](New-ISOFile -SourcePath $staging -DestinationPath $isoPath -VolumeName 'UNATTEND')
         }
     }
     finally {
