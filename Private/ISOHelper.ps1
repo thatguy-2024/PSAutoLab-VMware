@@ -87,7 +87,12 @@ function New-ISOFile {
     )
 
     if (Test-Path -Path $DestinationPath) {
-        Remove-Item -Path $DestinationPath -Force
+        try {
+            Remove-Item -Path $DestinationPath -Force -ErrorAction Stop
+        }
+        catch {
+            throw "Cannot overwrite $DestinationPath - it is locked by another process. This usually means a lab VM that has this ISO attached is still powered on or suspended in VMware Workstation. Power the VM off (or run Shutdown-Lab / close VMware Workstation) and re-run the command. ($($_.Exception.Message))"
+        }
     }
 
     # 1) try oscdimg (Windows ADK)

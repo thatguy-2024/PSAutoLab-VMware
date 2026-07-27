@@ -43,6 +43,9 @@ function New-LabVMDK {
         if ($Force) {
             if ($PSCmdlet.ShouldProcess($vmdkPath, 'Delete existing VMDK')) {
                 Remove-LabVMDK -Path $vmdkPath
+                if (Test-Path -Path $vmdkPath) {
+                    throw "Cannot delete $vmdkPath - it is locked by another process. This usually means the VM is still powered on or suspended in VMware Workstation. Power it off (or run Shutdown-Lab / close VMware Workstation) and re-run Setup-Lab -Force."
+                }
             }
         }
         else {

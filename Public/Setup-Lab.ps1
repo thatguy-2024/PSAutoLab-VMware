@@ -96,7 +96,22 @@ function Invoke-SetupLab {
         Invoke-LabDSCCompile -Path $lab.Path
     }
 
-    # 3) per-node provisioning
+    # 3) stop any lab VMs that are still running. VMware locks the VMDK and
+    # the attached ISOs while a VM is powered on (or suspended), which makes
+    # the rebuild below fail with 'file is being used by another process' /
+    # 'The file already exists'.
+    foreach ($node in $lab.Nodes) {
+        if ((Get-LabVMState -Node $node) -eq 'Running') {
+            Write-LabMessage -Message "Powering off $($node.VMName) before rebuilding its files" -Color Yellow -Quiet:$NoMessages
+            if ($PSCmdlet.ShouldProcess($node.VMName, 'vmrun stop hard')) {
+                [void](Invoke-VMRun -Command stop -Arguments (Get-LabVMXPath -Node $node), 'hard' -IgnoreErrors)
+                # give VMware a moment to release its file locks
+                Start-Sleep -Seconds 3
+            }
+        }
+    }
+
+    # 4) per-node provisioning
     foreach ($node in $lab.Nodes) {
         Write-LabMessage -Message "Provisioning $($node.VMName) [$($node.Description)]" -Color Green -Quiet:$NoMessages
 
