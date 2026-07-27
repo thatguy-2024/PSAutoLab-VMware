@@ -27,6 +27,12 @@ function Invoke-SetupLab {
     .PARAMETER Force
         Recreate VMDK disks and VMX files if they already exist. Destroys any
         existing VM data for this lab.
+    .PARAMETER DiskSizeGB
+        Size of each VM's system disk in GB. Default 127 (the Lability
+        default used by the original PS-AutoLab-Env). The VMDKs are
+        thin-provisioned, so they only consume what the guest actually
+        writes regardless of this number. Minimum 40 recommended for
+        Windows Server / client labs.
     .PARAMETER NoMessages
         Run the command but suppress all status messages.
     .EXAMPLE
@@ -52,6 +58,10 @@ function Invoke-SetupLab {
         [switch]$UseLocalTimeZone,
 
         [switch]$Force,
+
+        [Parameter(HelpMessage = 'Size of each VM system disk in GB. Default 127 (Lability default). Disks are thin-provisioned.')]
+        [ValidateRange(40, 2048)]
+        [int]$DiskSizeGB = 127,
 
         [Parameter(HelpMessage = 'Run the command but suppress all status messages.')]
         [Alias('Quiet')]
@@ -128,7 +138,7 @@ function Invoke-SetupLab {
 
         # VMDK
         Write-Verbose "Creating VMDK for $($node.Computername)"
-        [void](New-LabVMDK -Node $node -Force:$Force)
+        [void](New-LabVMDK -Node $node -SizeGB $DiskSizeGB -Force:$Force)
 
         # VMX
         Write-Verbose "Creating VMX for $($node.Computername)"

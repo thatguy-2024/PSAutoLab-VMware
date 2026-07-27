@@ -89,7 +89,7 @@ Wipe-Lab
 | Command (alias) | Function | Description |
 |---|---|---|
 | `Setup-Host` | `Invoke-SetupHost` | One-time host prep: verifies VMware Workstation, enables PSRemoting, sets TrustedHosts for `192.168.3.*`, installs Pester, creates `C:\AutolabVMware` folders, configures the **vmnet2** host-only network, copies configurations. |
-| `Setup-Lab` | `Invoke-SetupLab` | Run from a configuration folder. Downloads the evaluation ISO(s), builds the `autounattend.xml` ISO, VMDK and VMX for every node, installs DSC resources and compiles the MOFs from the original `VMConfiguration.ps1`. Supports `-UseLocalTimeZone`, `-Force`. |
+| `Setup-Lab` | `Invoke-SetupLab` | Run from a configuration folder. Downloads the evaluation ISO(s), builds the `autounattend.xml` ISO, VMDK and VMX for every node, installs DSC resources and compiles the MOFs from the original `VMConfiguration.ps1`. Supports `-UseLocalTimeZone`, `-Force`, `-DiskSizeGB` (default 127, matching the Lability/PS-AutoLab-Env default; VMDKs are thin-provisioned so they only consume what the guest actually writes). |
 | `Run-Lab` | `Invoke-RunLab` | Powers on VMs in boot order. On first run, waits for the unattended install + WinRM, disconnects the install media, then pushes the DSC configuration to each VM. Supports `-SkipDSC`, `-TimeoutMinutes`. |
 | `Enable-Internet` | `Enable-Internet` | Creates a WinNAT (`New-NetNat`) on the host so lab VMs (gateway `192.168.3.1`) can reach the internet. |
 | `Validate-Lab` | `Invoke-ValidateLab` | Repeatedly runs the folder's `VMValidate.test.ps1` Pester tests (over WinRM) until everything passes or 65 minutes elapse. |
