@@ -61,7 +61,7 @@ function New-LabUnattendXml {
         '{{GATEWAY}}'       = $Node.DefaultGateway
         '{{DNSSERVER}}'     = $Node.DnsServer
         '{{TIMEZONE}}'      = $Node.TimeZone
-        '{{IMAGENAME}}'     = $media.ImageName
+        '{{IMAGEINDEX}}'    = $media.ImageIndex
         '{{OWNER}}'         = 'AutolabVMware'
         '{{ORGANIZATION}}'  = 'AutolabVMware'
     }

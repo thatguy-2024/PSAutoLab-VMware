@@ -4,7 +4,7 @@
 
     Tokens replaced at build time by New-LabUnattendXml:
       {{COMPUTERNAME}} {{ADMINPASSWORD}} {{IPADDRESS}} {{PREFIXLENGTH}}
-      {{GATEWAY}} {{DNSSERVER}} {{TIMEZONE}} {{IMAGENAME}}
+      {{GATEWAY}} {{DNSSERVER}} {{TIMEZONE}} {{IMAGEINDEX}}
       {{OWNER}} {{ORGANIZATION}}
 
     Disk layout: UEFI/GPT (EFI System 260 MB, MSR 128 MB, OS = remainder).
@@ -89,8 +89,8 @@
                 <OSImage>
                     <InstallFrom>
                         <MetaData wcm:action="add">
-                            <Key>/IMAGE/NAME</Key>
-                            <Value>{{IMAGENAME}}</Value>
+                            <Key>/IMAGE/INDEX</Key>
+                            <Value>{{IMAGEINDEX}}</Value>
                         </MetaData>
                     </InstallFrom>
                     <InstallTo>
