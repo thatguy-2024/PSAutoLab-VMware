@@ -78,11 +78,15 @@ vcpu.hotadd = "TRUE"
 vhv.enable = "FALSE"
 hypervisor.cpuid.v0 = "TRUE"
 
-# System disk (NVMe)
-nvme0.present = "TRUE"
-nvme0:0.present = "TRUE"
-nvme0:0.fileName = "$vmdkName"
-nvme0:0.deviceType = "disk"
+# System disk (LSI Logic SAS - matches the lsilogic adapter type that
+# vmware-vdiskmanager writes into the VMDK descriptor; an NVMe attach of an
+# lsilogic-descriptor disk can crash the vmx process at power-on with
+# 'Transport (VMDB) error -14')
+scsi0.present = "TRUE"
+scsi0.virtualDev = "lsisas1068"
+scsi0:0.present = "TRUE"
+scsi0:0.fileName = "$vmdkName"
+scsi0:0.deviceType = "scsi-hardDisk"
 
 # CD-ROM 1: Windows installation ISO
 sata0.present = "TRUE"
