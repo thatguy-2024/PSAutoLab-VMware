@@ -78,6 +78,27 @@ vcpu.hotadd = "TRUE"
 vhv.enable = "FALSE"
 hypervisor.cpuid.v0 = "TRUE"
 
+# PCI bridges / PCIe root ports. REQUIRED: without these the virtual
+# chipset exposes no PCIe slots, and power-on fails with 'No PCIe slot
+# available for SCSI0 / Too many PCI devices are already configured'.
+# These match the standard set VMware Workstation writes into every
+# GUI-created .vmx.
+pciBridge0.present = "TRUE"
+pciBridge4.present = "TRUE"
+pciBridge4.virtualDev = "pcieRootPort"
+pciBridge4.functions = "8"
+pciBridge5.present = "TRUE"
+pciBridge5.virtualDev = "pcieRootPort"
+pciBridge5.functions = "8"
+pciBridge6.present = "TRUE"
+pciBridge6.virtualDev = "pcieRootPort"
+pciBridge6.functions = "8"
+pciBridge7.present = "TRUE"
+pciBridge7.virtualDev = "pcieRootPort"
+pciBridge7.functions = "8"
+vmci0.present = "TRUE"
+hpet0.present = "TRUE"
+
 # System disk (LSI Logic SAS - matches the lsilogic adapter type that
 # vmware-vdiskmanager writes into the VMDK descriptor; an NVMe attach of an
 # lsilogic-descriptor disk can crash the vmx process at power-on with

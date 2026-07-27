@@ -63,6 +63,9 @@ Assert ($vmxContent -match 'virtualHW\.version = "21"') 'VMX hardware version 21
 Assert ($vmxContent -match 'ethernet0\.vnet = "VMnet2"') 'VMX NIC on vmnet2'
 Assert ($vmxContent -match 'guestOS = "windows2019srv-64"') "VMX guestOS mapped (2019 Core)"
 Assert ($vmxContent -match [regex]::Escape('bios.bootOrder = "cdrom,hdd"')) 'VMX initial boot order cdrom,hdd'
+Assert ($vmxContent -match [regex]::Escape('pciBridge4.virtualDev = "pcieRootPort"')) 'VMX defines PCIe root ports (pciBridge4)'
+Assert ($vmxContent -match [regex]::Escape('pciBridge7.functions = "8"')) 'VMX defines PCIe root ports (pciBridge7)'
+Assert ($vmxContent -match [regex]::Escape('scsi0.virtualDev = "lsisas1068"')) 'VMX system disk on LSI Logic SAS'
 
 # Boot order flip after install
 Set-LabVMXBootOrder -VMXPath $vmx -DisconnectISO
