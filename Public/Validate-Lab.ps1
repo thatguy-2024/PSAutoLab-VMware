@@ -49,7 +49,7 @@ function Invoke-ValidateLab {
     foreach ($node in $lab.Nodes) {
         if ((Get-LabVMState -Node $node) -eq 'Off') {
             Write-LabMessage -Message "Starting $($node.VMName)" -Quiet:$NoMessages
-            [void](Invoke-VMRun -Command start -Arguments (Get-LabVMXPath -Node $node), 'nogui' -IgnoreErrors)
+            try { Start-LabVM -VMXPath (Get-LabVMXPath -Node $node) } catch { Write-Warning "Could not start $($node.VMName): $($_.Exception.Message)" }
         }
     }
 

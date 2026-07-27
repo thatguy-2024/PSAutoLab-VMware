@@ -74,7 +74,7 @@ function Invoke-RunLab {
         }
         if ($PSCmdlet.ShouldProcess($node.VMName, 'vmrun start')) {
             Write-LabMessage -Message "Powering on $($node.VMName)" -Quiet:$NoMessages
-            [void](Invoke-VMRun -Command start -Arguments $vmx, 'nogui')
+            Start-LabVM -VMXPath $vmx
             if ($node.BootDelay -gt 0) {
                 Write-Verbose "Boot delay: waiting $($node.BootDelay) seconds before the next VM"
                 Start-Sleep -Seconds $node.BootDelay

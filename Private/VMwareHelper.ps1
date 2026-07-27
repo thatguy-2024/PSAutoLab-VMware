@@ -149,6 +149,55 @@ function Invoke-VMRun {
     $output | ForEach-Object { "$_".Trim() } | Where-Object { $_ }
 }
 
+function Start-LabVM {
+    <#
+    .SYNOPSIS
+        Power on a lab VM with pre-flight checks and a gui fallback.
+    .DESCRIPTION
+        Before invoking 'vmrun start', verifies that every file the .vmx
+        references (VMDK, install ISO, unattend ISO) actually exists - a missing
+        file makes vmrun fail with only 'Unknown error'. Starts the VM with
+        'nogui' first; if that fails, retries with 'gui', because 'vmrun start
+        ... nogui' is known to fail with 'Unknown error' on many Windows hosts
+        while 'gui' works (the VM window opens in VMware Workstation).
+    .PARAMETER VMXPath
+        Path to the VM's .vmx file.
+    .EXAMPLE
+        PS C:\> Start-LabVM -VMXPath C:\AutolabVMware\VMs\S1\S1.vmx
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateScript({ Test-Path $_ })]
+        [string]$VMXPath
+    )
+
+    # Pre-flight: verify all files referenced by the VMX exist
+    $vmxDir = Split-Path -Path $VMXPath -Parent
+    $missing = @()
+    foreach ($line in (Get-Content -Path $VMXPath)) {
+        if ($line -match '^\s*(nvme|scsi|sata|ide)\d+:\d+\.fileName\s*=\s*"(.+)"\s*$') {
+            $file = $Matches[2]
+            if ($file -match '^(auto detect|emptyBackingString)$') { continue }
+            $full = if ([IO.Path]::IsPathRooted($file)) { $file } else { Join-Path $vmxDir $file }
+            if (-not (Test-Path -Path $full)) { $missing += $full }
+        }
+    }
+    if ($missing) {
+        throw "Cannot start '$VMXPath' - the VMX references file(s) that do not exist:`n  $($missing -join "`n  ")`nRe-run Setup-Lab -Force to recreate the missing pieces."
+    }
+
+    # nogui is flaky on Windows hosts (fails with 'Unknown error'); fall back to gui
+    try {
+        [void](Invoke-VMRun -Command start -Arguments $VMXPath, 'nogui')
+    }
+    catch {
+        Write-Verbose "vmrun start nogui failed ($($_.Exception.Message)); retrying with gui"
+        Write-Warning "Starting $([IO.Path]::GetFileNameWithoutExtension($VMXPath)) headless (nogui) failed - retrying with the VMware Workstation window (gui). This is a known vmrun quirk on Windows hosts."
+        [void](Invoke-VMRun -Command start -Arguments $VMXPath, 'gui')
+    }
+}
+
 function Get-RunningVMX {
     <#
     .SYNOPSIS
