@@ -165,8 +165,24 @@ function Invoke-PesterTest {
         }
     }
 
-    Import-Module -Name Pester -MinimumVersion $script:PesterVersion -Force -Global -ErrorAction Stop
-    Invoke-Pester -Path $testFile -Show All -WarningAction SilentlyContinue
+    # Load exactly one modern Pester (v5/v6). Windows PowerShell 5.1 ships with
+    # Pester 3.4.0 auto-loaded; unload every Pester first so Invoke-Pester does
+    # not resolve to the old command. The tests use v5+ data-driven syntax and
+    # are driven through New-PesterConfiguration (the -Show parameter was
+    # removed in Pester 6).
+    Get-Module -Name Pester -All | Remove-Module -Force -ErrorAction SilentlyContinue
+    $pesterModule = Get-Module -Name Pester -ListAvailable |
+        Where-Object { $_.Version.Major -ge 5 } |
+        Sort-Object Version -Descending | Select-Object -First 1
+    if (-not $pesterModule) {
+        throw 'Pester 5.0 or later is required (found only older versions). Run Setup-Host, then open a NEW PowerShell session and retry.'
+    }
+    Import-Module -Name Pester -RequiredVersion $pesterModule.Version -Force -Global -ErrorAction Stop
+
+    $cfg = New-PesterConfiguration
+    $cfg.Run.Path = $testFile
+    $cfg.Output.Verbosity = 'Detailed'
+    Invoke-Pester -Configuration $cfg -WarningAction SilentlyContinue
 }
 
 function Test-LabDSCResource {

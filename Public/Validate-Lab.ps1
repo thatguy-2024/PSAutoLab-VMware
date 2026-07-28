@@ -53,29 +53,41 @@ function Invoke-ValidateLab {
         }
     }
 
-    # Load the best available Pester. Prefer v5 (installed by Setup-Host);
-    # fall back gracefully to v4 (the version Windows ships with) so that
-    # Validate-Lab works even when Setup-Host has not been re-run.
+    # Load a modern Pester (v5 or v6 - installed by Setup-Host). The tests use
+    # the data-driven syntax (BeforeDiscovery / -ForEach) that only exists in
+    # Pester 5+, and this command drives them through New-PesterConfiguration,
+    # which is the supported API across Pester 5.2 -> 6.x (the legacy -Show
+    # parameter was deprecated in v5 and removed in v6).
     #
     # IMPORTANT: Windows PowerShell 5.1 ships with Pester 3.4.0 auto-loaded.
-    # If we simply Import-Module -Force the newer version, the old one stays
-    # loaded too, so 'Invoke-Pester' can still resolve to the v3/v4 command
-    # (which has no -Show) while (Get-Module Pester).Version returns an ARRAY
-    # of every loaded version. We therefore unload ALL Pester modules first,
-    # import exactly one version, and read that single module's version.
+    # If we simply Import-Module -Force a newer version, the old one stays
+    # loaded too, so 'Invoke-Pester' can still resolve to the v3 command while
+    # (Get-Module Pester).Version returns an ARRAY of every loaded version. We
+    # therefore unload ALL Pester modules first, then import exactly one modern
+    # version and read that single module's version.
     Get-Module -Name Pester -All | Remove-Module -Force -ErrorAction SilentlyContinue
 
     $pesterModule = Get-Module -Name Pester -ListAvailable |
+        Where-Object { $_.Version.Major -ge 5 } |
         Sort-Object Version -Descending | Select-Object -First 1
     if (-not $pesterModule) {
-        throw 'Pester is not installed. Run Setup-Host first (Install-Module Pester -Force -SkipPublisherCheck).'
+        throw 'Pester 5.0 or later is required (found only older versions). Run Setup-Host, then open a NEW PowerShell session and retry. Setup-Host runs: Install-Module Pester -MinimumVersion 5.0 -Force -SkipPublisherCheck.'
     }
     Import-Module -Name Pester -RequiredVersion $pesterModule.Version -Force -Global -ErrorAction Stop
 
     # Read the version from the single module we just imported (not an array).
     $loadedPester = @(Get-Module -Name Pester | Sort-Object Version -Descending)[0]
-    $pesterV5 = [version]$loadedPester.Version -ge [version]'5.0.0'
     Write-LabMessage -Message "Using Pester $($loadedPester.Version)" -Quiet:$NoMessages
+
+    # Helper: build a fresh Pester configuration object for each run.
+    function New-LabPesterConfig {
+        param([string]$TestPath, [string]$Verbosity, [switch]$PassThru)
+        $cfg = New-PesterConfiguration
+        $cfg.Run.Path = $TestPath
+        $cfg.Output.Verbosity = $Verbosity
+        if ($PassThru) { $cfg.Run.PassThru = $true }
+        return $cfg
+    }
 
     $startTime = Get-Date
     $timeoutMinutes = 65
@@ -86,13 +98,8 @@ function Invoke-ValidateLab {
         $pass++
         Write-LabMessage -Message "[$(Get-Date -Format 'HH:mm:ss')] Validation pass $pass" -Quiet:$NoMessages
 
-        if ($pesterV5) {
-            $result = Invoke-Pester -Path $testFile -Show None -PassThru -WarningAction SilentlyContinue
-        }
-        else {
-            # Pester v4: -Show does not exist; -Quiet suppresses output
-            $result = Invoke-Pester -Script $testFile -Quiet -PassThru -WarningAction SilentlyContinue
-        }
+        $cfg = New-LabPesterConfig -TestPath $testFile -Verbosity 'None' -PassThru
+        $result = Invoke-Pester -Configuration $cfg -WarningAction SilentlyContinue
 
         if ($result.FailedCount -eq 0 -and $result.PassedCount -gt 0) {
             $complete = $true
@@ -116,12 +123,8 @@ function Invoke-ValidateLab {
 
     if ($complete) {
         Write-LabMessage -Message 'All validation tests passed. Re-running with full output:' -Color Green -Quiet:$NoMessages
-        if ($pesterV5) {
-            Invoke-Pester -Path $testFile -Show All -WarningAction SilentlyContinue
-        }
-        else {
-            Invoke-Pester -Script $testFile -WarningAction SilentlyContinue
-        }
+        $cfgFull = New-LabPesterConfig -TestPath $testFile -Verbosity 'Detailed'
+        Invoke-Pester -Configuration $cfgFull -WarningAction SilentlyContinue
         if (-not $NoMessages) {
             Microsoft.PowerShell.Utility\Write-Host -ForegroundColor Green -Object @"
 
