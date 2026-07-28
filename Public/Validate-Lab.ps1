@@ -56,15 +56,26 @@ function Invoke-ValidateLab {
     # Load the best available Pester. Prefer v5 (installed by Setup-Host);
     # fall back gracefully to v4 (the version Windows ships with) so that
     # Validate-Lab works even when Setup-Host has not been re-run.
+    #
+    # IMPORTANT: Windows PowerShell 5.1 ships with Pester 3.4.0 auto-loaded.
+    # If we simply Import-Module -Force the newer version, the old one stays
+    # loaded too, so 'Invoke-Pester' can still resolve to the v3/v4 command
+    # (which has no -Show) while (Get-Module Pester).Version returns an ARRAY
+    # of every loaded version. We therefore unload ALL Pester modules first,
+    # import exactly one version, and read that single module's version.
+    Get-Module -Name Pester -All | Remove-Module -Force -ErrorAction SilentlyContinue
+
     $pesterModule = Get-Module -Name Pester -ListAvailable |
         Sort-Object Version -Descending | Select-Object -First 1
-    if ($pesterModule) {
-        Import-Module -Name Pester -RequiredVersion $pesterModule.Version -Force -Global -ErrorAction Stop
-    }
-    else {
+    if (-not $pesterModule) {
         throw 'Pester is not installed. Run Setup-Host first (Install-Module Pester -Force -SkipPublisherCheck).'
     }
-    $pesterV5 = (Get-Module Pester).Version.Major -ge 5
+    Import-Module -Name Pester -RequiredVersion $pesterModule.Version -Force -Global -ErrorAction Stop
+
+    # Read the version from the single module we just imported (not an array).
+    $loadedPester = @(Get-Module -Name Pester | Sort-Object Version -Descending)[0]
+    $pesterV5 = [version]$loadedPester.Version -ge [version]'5.0.0'
+    Write-LabMessage -Message "Using Pester $($loadedPester.Version)" -Quiet:$NoMessages
 
     $startTime = Get-Date
     $timeoutMinutes = 65
