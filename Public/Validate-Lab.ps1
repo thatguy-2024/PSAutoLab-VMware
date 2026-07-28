@@ -53,7 +53,18 @@ function Invoke-ValidateLab {
         }
     }
 
-    Import-Module -Name Pester -MinimumVersion $script:PesterVersion -Force -Global -ErrorAction Stop
+    # Load the best available Pester. Prefer v5 (installed by Setup-Host);
+    # fall back gracefully to v4 (the version Windows ships with) so that
+    # Validate-Lab works even when Setup-Host has not been re-run.
+    $pesterModule = Get-Module -Name Pester -ListAvailable |
+        Sort-Object Version -Descending | Select-Object -First 1
+    if ($pesterModule) {
+        Import-Module -Name Pester -RequiredVersion $pesterModule.Version -Force -Global -ErrorAction Stop
+    }
+    else {
+        throw 'Pester is not installed. Run Setup-Host first (Install-Module Pester -Force -SkipPublisherCheck).'
+    }
+    $pesterV5 = (Get-Module Pester).Version.Major -ge 5
 
     $startTime = Get-Date
     $timeoutMinutes = 65
@@ -64,7 +75,13 @@ function Invoke-ValidateLab {
         $pass++
         Write-LabMessage -Message "[$(Get-Date -Format 'HH:mm:ss')] Validation pass $pass" -Quiet:$NoMessages
 
-        $result = Invoke-Pester -Path $testFile -Show None -PassThru -WarningAction SilentlyContinue
+        if ($pesterV5) {
+            $result = Invoke-Pester -Path $testFile -Show None -PassThru -WarningAction SilentlyContinue
+        }
+        else {
+            # Pester v4: -Show does not exist; -Quiet suppresses output
+            $result = Invoke-Pester -Script $testFile -Quiet -PassThru -WarningAction SilentlyContinue
+        }
 
         if ($result.FailedCount -eq 0 -and $result.PassedCount -gt 0) {
             $complete = $true
@@ -88,7 +105,12 @@ function Invoke-ValidateLab {
 
     if ($complete) {
         Write-LabMessage -Message 'All validation tests passed. Re-running with full output:' -Color Green -Quiet:$NoMessages
-        Invoke-Pester -Path $testFile -Show All -WarningAction SilentlyContinue
+        if ($pesterV5) {
+            Invoke-Pester -Path $testFile -Show All -WarningAction SilentlyContinue
+        }
+        else {
+            Invoke-Pester -Script $testFile -WarningAction SilentlyContinue
+        }
         if (-not $NoMessages) {
             Microsoft.PowerShell.Utility\Write-Host -ForegroundColor Green -Object @"
 
